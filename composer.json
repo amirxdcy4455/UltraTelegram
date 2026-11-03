@@ -1,0 +1,36 @@
+{
+  "name": "amirxd/ultra-telegram",
+  "description": "A clean, extensible PHP client for the Telegram Bot API powered by PHP Ultra Request.",
+  "type": "library",
+  "license": "MIT",
+  "require": {
+    "php": ">=8.0",
+    "ext-json": "*",
+    "ext-curl": "*",
+    "amirxd/php-ultra-request": "dev-main"
+  },
+  "autoload": {
+    "psr-4": {
+      "Amirxd\\\\UltraTelegram\\\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Amirxd\\\\UltraTelegram\\\\Tests\\\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "php tests/run.php"
+  },
+  "keywords": [
+    "telegram",
+    "telegram-bot-api",
+    "bot-api",
+    "php",
+    "http-client",
+    "ultra-request",
+    "webhook",
+    "long-polling"
+  ],
+  "prefer-stable": true
+}
