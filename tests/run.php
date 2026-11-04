@@ -16,7 +16,9 @@ if (is_file($vendorAutoload)) {
 
         $maps = [
             'Amirxd\\UltraTelegram\\' => dirname(__DIR__) . '/src/',
-            'Amirxd\\UltraRequest\\' => rtrim($ultraRequestPath, '/\\') . '/' . (str_ends_with($ultraRequestPath, '/src') ? '' : 'src/')
+            'Amirxd\\UltraRequest\\' => rtrim($ultraRequestPath, '/\\') . '/' . (
+                str_ends_with($ultraRequestPath, '/src') ? '' : 'src/'
+            ),
         ];
 
         foreach ($maps as $prefix => $basePath) {
@@ -246,7 +248,12 @@ $test('Expose raw Telegram API errors without throwing', static function () use 
 $test('Send concurrent Bot API calls and preserve keyed results', static function () use ($assert): void {
     $transport = new FakeConcurrentTransport();
     $transport->queue(['ok' => true, 'result' => ['id' => 1]]);
-    $transport->queue(['ok' => false, 'error_code' => 429, 'description' => 'Limited', 'parameters' => ['retry_after' => 2]], 429);
+    $transport->queue([
+        'ok' => false,
+        'error_code' => 429,
+        'description' => 'Limited',
+        'parameters' => ['retry_after' => 2],
+    ], 429);
     $transport->responses[] = new RuntimeException('Simulated connection failure');
 
     $bot = new TelegramClient('123456:abcdefghijklmnopqrstuvwxyz123456', transport: $transport);
@@ -663,7 +670,10 @@ $test('Copy local Bot API file paths without HTTP download', static function () 
     @rmdir($destinationDirectory);
 });
 
-$test('Build direct and nested multipart file fields without attachment name collisions', static function () use ($assert): void {
+$test(
+    'Build direct and nested multipart file fields '
+    . 'without attachment name collisions',
+    static function () use ($assert): void {
     $filePath = tempnam(sys_get_temp_dir(), 'ultra-multipart-');
     file_put_contents($filePath, 'upload-data');
     $file = InputFile::fromPath($filePath, 'sample.txt', 'text/plain');
@@ -799,7 +809,6 @@ $test('Support arbitrary future Bot API methods', static function () use ($asser
     $assert(str_ends_with($transport->requests[0]->getUrl(), '/sendFutureTelegramMethod'));
 });
 
-
 $test('Forward Bot API 10.3 rich message methods without wrappers', static function () use ($assert): void {
     $transport = new FakeTransport();
     $transport->queue(['ok' => true, 'result' => ['message_id' => 77]]);
@@ -889,12 +898,15 @@ $test('Allow dispatcher client override', static function () use ($assert): void
     $assert($receivedClient === $overrideClient);
 });
 
-
 $test('Expose HTTP status codes for webhook validation failures', static function () use ($assert): void {
     $cases = [
         ['', 1024, ['REQUEST_METHOD' => 'GET'], '{}', 405],
         ['', 1024, ['REQUEST_METHOD' => 'POST', 'CONTENT_TYPE' => 'text/plain'], '{}', 415],
-        ['expected', 1024, ['REQUEST_METHOD' => 'POST', 'CONTENT_TYPE' => 'application/json', 'HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN' => 'wrong'], '{}', 403],
+        ['expected', 1024, [
+            'REQUEST_METHOD' => 'POST',
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN' => 'wrong',
+        ], '{}', 403],
         ['', 5, ['REQUEST_METHOD' => 'POST', 'CONTENT_TYPE' => 'application/json'], '{"update_id":1}', 413],
         ['', 1024, ['REQUEST_METHOD' => 'POST', 'CONTENT_TYPE' => 'application/json'], '{broken', 400]
     ];
