@@ -26,7 +26,7 @@ http_response_code(200);
 echo 'OK';
 ~~~
 
-The helper validates the POST method, JSON content type, Telegram secret header, body size and Update payload structure.
+The helper validates the POST method, JSON content type, Telegram secret header, body size and Update payload structure. It also requires a non-negative integer `update_id` and exactly one object-valued update field. Unknown future update field names remain accepted.
 
 The web server, HTTPS certificate, reverse proxy and endpoint routing remain the application's responsibility. Keep the secret token outside source control.
 

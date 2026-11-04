@@ -67,13 +67,33 @@ class WebhookRequest
         }
 
         try {
+            $decodedPayload = json_decode($rawBody, false, 512, JSON_THROW_ON_ERROR);
             $payload = json_decode($rawBody, true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException $error) {
             throw new WebhookRequestException('Telegram webhook payload is not valid JSON.', 400, $error);
         }
 
-        if (!is_array($payload) || !isset($payload['update_id'])) {
-            throw new WebhookRequestException('Telegram webhook payload is not a valid Update object.', 400);
+        if (!$decodedPayload instanceof \stdClass || !is_array($payload)) {
+            throw new WebhookRequestException('Telegram webhook payload must be a JSON object.', 400);
+        }
+
+        $properties = get_object_vars($decodedPayload);
+        $updateId = $properties['update_id'] ?? null;
+        $eventFields = array_values(array_filter(
+            array_keys($properties),
+            static fn(int|string $field): bool => $field !== 'update_id'
+        ));
+
+        if (
+            !is_int($updateId)
+            || $updateId < 0
+            || count($eventFields) !== 1
+            || !$properties[$eventFields[0]] instanceof \stdClass
+        ) {
+            throw new WebhookRequestException(
+                'Telegram webhook payload must contain a non-negative integer update_id and exactly one object update field.',
+                400
+            );
         }
 
         return new self(new TelegramUpdate($payload), strlen($rawBody));

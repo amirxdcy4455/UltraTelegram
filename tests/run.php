@@ -460,6 +460,42 @@ $test('Validate webhook method, secret, and JSON payload', static function () us
     $assert($request->getBodySize() > 0);
 });
 
+$test('Validate webhook Update identifiers and event payloads', static function () use ($assert): void {
+    $server = [
+        'REQUEST_METHOD' => 'POST',
+        'CONTENT_TYPE' => 'application/json'
+    ];
+
+    $futureUpdate = WebhookRequest::fromGlobals(
+        '',
+        1024,
+        $server,
+        '{"update_id":44,"future_update":{"value":true}}'
+    );
+    $assert($futureUpdate->getUpdate()->getUpdateId() === 44);
+    $assert($futureUpdate->getUpdate()->getUpdateType() === 'future_update');
+
+    $invalidBodies = [
+        '[{"update_id":44,"message":{}}]',
+        '{"update_id":"44","message":{}}',
+        '{"update_id":44.5,"message":{}}',
+        '{"update_id":-1,"message":{}}',
+        '{"update_id":44}',
+        '{"update_id":44,"message":{},"callback_query":{}}',
+        '{"update_id":44,"message":null}',
+        '{"update_id":44,"message":"not-an-object"}'
+    ];
+
+    foreach ($invalidBodies as $body) {
+        try {
+            WebhookRequest::fromGlobals('', 1024, $server, $body);
+            $assert(false, 'Malformed Telegram Update payload was accepted: ' . $body);
+        } catch (WebhookRequestException $error) {
+            $assert($error->getHttpStatusCode() === 400);
+        }
+    }
+});
+
 $test('Reject invalid webhook secret', static function () use ($assert): void {
     try {
         WebhookRequest::fromGlobals(

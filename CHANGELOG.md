@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Validate webhook Update envelopes, requiring a non-negative integer `update_id` and exactly one object-valued event field while preserving forward compatibility with unknown event names.
+
+
 ## 1.0.0 - 2026-11-03
 
 - Initial Telegram Bot API client built on PHP Ultra Request.
