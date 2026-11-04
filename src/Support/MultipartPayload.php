@@ -10,10 +10,11 @@ use InvalidArgumentException;
 
 class MultipartPayload
 {
+    private const MAX_NESTED_DEPTH = 64;
     public static function containsFile(array $parameters): bool
     {
         foreach ($parameters as $value) {
-            if (self::containsInputFile($value)) return true;
+            if (self::containsInputFile($value, 0)) return true;
         }
         return false;
     }
@@ -34,7 +35,7 @@ class MultipartPayload
                 $body[$name] = $value->toCurlFile();
                 continue;
             }
-            $normalized = self::normalizeNested($value, $attachments, $attachmentIndex, $reservedNames);
+            $normalized = self::normalizeNested($value, $attachments, $attachmentIndex, $reservedNames, 0);
             $body[$name] = self::encodeField($normalized);
         }
 
@@ -45,8 +46,9 @@ class MultipartPayload
         return $body;
     }
 
-    private static function normalizeNested(mixed $value, array &$attachments, int &$attachmentIndex, array $reservedNames): mixed
+    private static function normalizeNested(mixed $value, array &$attachments, int &$attachmentIndex, array $reservedNames, int $depth): mixed
     {
+        self::assertNestingDepth($depth);
         if ($value instanceof InputFile) {
             do {
                 $attachmentIndex++;
@@ -56,16 +58,16 @@ class MultipartPayload
             return 'attach://' . $attachmentName;
         }
         if ($value instanceof JsonSerializable) {
-            return self::normalizeNested($value->jsonSerialize(), $attachments, $attachmentIndex, $reservedNames);
+            return self::normalizeNested($value->jsonSerialize(), $attachments, $attachmentIndex, $reservedNames, $depth + 1);
         }
         if (is_object($value)) {
-            return self::normalizeNested(get_object_vars($value), $attachments, $attachmentIndex, $reservedNames);
+            return self::normalizeNested(get_object_vars($value), $attachments, $attachmentIndex, $reservedNames, $depth + 1);
         }
         if (!is_array($value)) return $value;
 
         $normalized = [];
         foreach ($value as $key => $item) {
-            $normalized[$key] = self::normalizeNested($item, $attachments, $attachmentIndex, $reservedNames);
+            $normalized[$key] = self::normalizeNested($item, $attachments, $attachmentIndex, $reservedNames, $depth + 1);
         }
         return $normalized;
     }
@@ -81,15 +83,26 @@ class MultipartPayload
         throw new InvalidArgumentException('Unsupported Telegram multipart parameter value.');
     }
 
-    private static function containsInputFile(mixed $value): bool
+    private static function containsInputFile(mixed $value, int $depth): bool
     {
+        self::assertNestingDepth($depth);
         if ($value instanceof InputFile) return true;
-        if ($value instanceof JsonSerializable) return self::containsInputFile($value->jsonSerialize());
-        if (is_object($value)) return self::containsInputFile(get_object_vars($value));
+        if ($value instanceof JsonSerializable) return self::containsInputFile($value->jsonSerialize(), $depth + 1);
+        if (is_object($value)) return self::containsInputFile(get_object_vars($value), $depth + 1);
         if (!is_array($value)) return false;
         foreach ($value as $item) {
-            if (self::containsInputFile($item)) return true;
+            if (self::containsInputFile($item, $depth + 1)) return true;
         }
         return false;
+    }
+
+    private static function assertNestingDepth(int $depth): void
+    {
+        if ($depth > self::MAX_NESTED_DEPTH) {
+            throw new InvalidArgumentException(sprintf(
+                'Telegram parameter nesting exceeds the maximum supported depth of %d.',
+                self::MAX_NESTED_DEPTH
+            ));
+        }
     }
 }

@@ -51,6 +51,7 @@ use Amirxd\UltraTelegram\Polling\UpdatePoller;
 use Amirxd\UltraTelegram\Support\MultipartPayload;
 use Amirxd\UltraTelegram\Updates\UpdateDispatcher;
 use Amirxd\UltraTelegram\Webhook\WebhookRequest;
+use Amirxd\UltraTelegram\Webhook\WebhookRequestException;
 
 if (!class_exists(CURLFile::class)) {
     class CURLFile
@@ -813,6 +814,38 @@ $test('Allow dispatcher client override', static function () use ($assert): void
     ], $overrideClient);
 
     $assert($receivedClient === $overrideClient);
+});
+
+
+$test('Expose HTTP status codes for webhook validation failures', static function () use ($assert): void {
+    $cases = [
+        ['', 1024, ['REQUEST_METHOD' => 'GET'], '{}', 405],
+        ['', 1024, ['REQUEST_METHOD' => 'POST', 'CONTENT_TYPE' => 'text/plain'], '{}', 415],
+        ['expected', 1024, ['REQUEST_METHOD' => 'POST', 'CONTENT_TYPE' => 'application/json', 'HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN' => 'wrong'], '{}', 403],
+        ['', 5, ['REQUEST_METHOD' => 'POST', 'CONTENT_TYPE' => 'application/json'], '{"update_id":1}', 413],
+        ['', 1024, ['REQUEST_METHOD' => 'POST', 'CONTENT_TYPE' => 'application/json'], '{broken', 400]
+    ];
+
+    foreach ($cases as [$secret, $limit, $server, $body, $expectedStatus]) {
+        try {
+            WebhookRequest::fromGlobals($secret, $limit, $server, $body);
+            $assert(false, 'Invalid webhook request was accepted.');
+        } catch (WebhookRequestException $error) {
+            $assert($error->getHttpStatusCode() === $expectedStatus);
+        }
+    }
+});
+
+$test('Reject recursive multipart payloads with a controlled error', static function () use ($assert): void {
+    $recursive = new stdClass();
+    $recursive->self = $recursive;
+
+    try {
+        MultipartPayload::containsFile(['media' => $recursive]);
+        $assert(false, 'Recursive multipart payload was accepted.');
+    } catch (InvalidArgumentException $error) {
+        $assert(str_contains($error->getMessage(), 'maximum supported depth'));
+    }
 });
 
 $passed = 0;

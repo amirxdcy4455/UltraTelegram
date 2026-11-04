@@ -29,3 +29,15 @@ echo 'OK';
 The helper validates the POST method, JSON content type, Telegram secret header, body size and Update payload structure.
 
 The web server, HTTPS certificate, reverse proxy and endpoint routing remain the application's responsibility. Keep the secret token outside source control.
+
+## Rejection status codes
+
+Invalid incoming requests raise WebhookRequestException, which extends UnexpectedValueException and exposes the HTTP status through getHttpStatusCode():
+
+- 400: malformed JSON or an invalid Update payload.
+- 403: missing or incorrect configured Telegram secret.
+- 405: request method is not POST.
+- 413: request body exceeds the configured limit.
+- 415: content type is not application/json.
+
+A failure while reading the request stream remains an internal runtime error. Keep request validation separate from update processing so application or Telegram API failures can return a 5xx response and be retried by Telegram.

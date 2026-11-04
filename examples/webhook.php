@@ -9,6 +9,7 @@ use Amirxd\UltraTelegram\Objects\TelegramObject;
 use Amirxd\UltraTelegram\Objects\TelegramUpdate;
 use Amirxd\UltraTelegram\Updates\UpdateDispatcher;
 use Amirxd\UltraTelegram\Webhook\WebhookRequest;
+use Amirxd\UltraTelegram\Webhook\WebhookRequestException;
 
 $token = getenv('TELEGRAM_BOT_TOKEN');
 $secret = getenv('TELEGRAM_WEBHOOK_SECRET') ?: '';
@@ -20,6 +21,19 @@ if (!is_string($token) || $token === '') {
 
 try {
     $webhook = WebhookRequest::fromGlobals($secret);
+} catch (WebhookRequestException $error) {
+    http_response_code($error->getHttpStatusCode());
+
+    if ($error->getHttpStatusCode() === 405) {
+        header('Allow: POST');
+    }
+
+    header('Content-Type: text/plain; charset=utf-8');
+    echo 'Invalid webhook request.';
+    exit;
+}
+
+try {
     $bot = new UltraTelegram($token);
     $dispatcher = new UpdateDispatcher($bot);
 
@@ -48,7 +62,8 @@ try {
     header('Content-Type: text/plain; charset=utf-8');
     echo 'OK';
 } catch (Throwable $error) {
-    http_response_code(400);
+    error_log('[UltraTelegram webhook] ' . $error->getMessage());
+    http_response_code(500);
     header('Content-Type: text/plain; charset=utf-8');
-    echo 'Invalid webhook request.';
+    echo 'Webhook processing failed.';
 }

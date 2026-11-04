@@ -29,23 +29,23 @@ class WebhookRequest
 
         $server = $server ?? $_SERVER;
         if (strtoupper((string)($server['REQUEST_METHOD'] ?? '')) !== 'POST') {
-            throw new RuntimeException('Telegram webhook requests must use POST.');
+            throw new WebhookRequestException('Telegram webhook requests must use POST.', 405);
         }
 
         $contentType = strtolower(trim((string)($server['CONTENT_TYPE'] ?? '')));
         $mediaType = trim(explode(';', $contentType, 2)[0]);
         if ($mediaType !== 'application/json') {
-            throw new RuntimeException('Telegram webhook requests must use application/json.');
+            throw new WebhookRequestException('Telegram webhook requests must use application/json.', 415);
         }
 
         $providedSecret = (string)($server['HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN'] ?? '');
         if ($secretToken !== '' && ($providedSecret === '' || !hash_equals($secretToken, $providedSecret))) {
-            throw new RuntimeException('Telegram webhook secret token is invalid.');
+            throw new WebhookRequestException('Telegram webhook secret token is invalid.', 403);
         }
 
         $contentLength = $server['CONTENT_LENGTH'] ?? null;
         if (is_numeric($contentLength) && (int)$contentLength > $maxBodyBytes) {
-            throw new RuntimeException('Telegram webhook payload exceeds the configured size limit.');
+            throw new WebhookRequestException('Telegram webhook payload exceeds the configured size limit.', 413);
         }
 
         if ($rawBody === null) {
@@ -58,18 +58,22 @@ class WebhookRequest
             }
         }
 
-        if ($rawBody === false || strlen($rawBody) > $maxBodyBytes) {
-            throw new RuntimeException('Telegram webhook payload exceeds the configured size limit.');
+        if ($rawBody === false) {
+            throw new RuntimeException('Unable to read webhook request body.');
+        }
+
+        if (strlen($rawBody) > $maxBodyBytes) {
+            throw new WebhookRequestException('Telegram webhook payload exceeds the configured size limit.', 413);
         }
 
         try {
             $payload = json_decode($rawBody, true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException $error) {
-            throw new UnexpectedValueException('Telegram webhook payload is not valid JSON.', 0, $error);
+            throw new WebhookRequestException('Telegram webhook payload is not valid JSON.', 400, $error);
         }
 
         if (!is_array($payload) || !isset($payload['update_id'])) {
-            throw new UnexpectedValueException('Telegram webhook payload is not a valid Update object.');
+            throw new WebhookRequestException('Telegram webhook payload is not a valid Update object.', 400);
         }
 
         return new self(new TelegramUpdate($payload), strlen($rawBody));
