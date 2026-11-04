@@ -18,6 +18,7 @@ class HttpResponse implements ResponseInterface
         $this->rawHeaders = $rawHeaders;
         $this->statusCode = $statusCode;
         $this->info = $info;
+
         $this->parseHeaders();
     }
 
@@ -25,38 +26,100 @@ class HttpResponse implements ResponseInterface
     {
         $blocks = preg_split('/\r?\n\r?\n/', trim($this->rawHeaders));
         $lastBlock = '';
+
         foreach ($blocks ?: [] as $block) {
-            if (preg_match('/^HTTP\//i', ltrim($block))) $lastBlock = $block;
+            if (preg_match('/^HTTP\//i', ltrim($block))) {
+                $lastBlock = $block;
+            }
         }
-        if ($lastBlock === '' && $this->rawHeaders !== '') $lastBlock = $this->rawHeaders;
+
+        if ($lastBlock === '' && $this->rawHeaders !== '') {
+            $lastBlock = $this->rawHeaders;
+        }
+
         foreach (preg_split('/\r?\n/', $lastBlock) ?: [] as $line) {
             $position = strpos($line, ':');
-            if ($position === false) continue;
+
+            if ($position === false) {
+                continue;
+            }
+
             $name = strtolower(trim(substr($line, 0, $position)));
+
             $this->headers[$name][] = trim(substr($line, $position + 1));
         }
     }
 
-    public function getBody(): ?string { return $this->body; }
+    public function getBody(): ?string
+    {
+        return $this->body;
+    }
+
     public function getHeaders(): array
     {
         $result = [];
-        foreach ($this->headers as $name => $values) $result[$name] = end($values) ?: '';
+
+        foreach ($this->headers as $name => $values) {
+            $result[$name] = end($values) ?: '';
+        }
+
         return $result;
     }
+
     public function getHeader(string $name): ?string
     {
         $values = $this->headers[strtolower($name)] ?? [];
-        return $values === [] ? null : (string)end($values);
+
+        return $values === [] ? null : (string) end($values);
     }
-    public function getHeaderValues(string $name): array { return $this->headers[strtolower($name)] ?? []; }
-    public function getRawHeaders(): string { return $this->rawHeaders; }
-    public function getStatusCode(): int { return $this->statusCode; }
-    public function isSuccessful(): bool { return $this->statusCode >= 200 && $this->statusCode < 300; }
-    public function isRedirect(): bool { return $this->statusCode >= 300 && $this->statusCode < 400; }
-    public function isClientError(): bool { return $this->statusCode >= 400 && $this->statusCode < 500; }
-    public function isServerError(): bool { return $this->statusCode >= 500 && $this->statusCode < 600; }
-    public function getJson(bool $assoc = true) { return $this->body === null ? null : json_decode($this->body, $assoc); }
-    public function getInfo(): array { return $this->info; }
-    public function __toString(): string { return $this->body ?? ''; }
+
+    public function getHeaderValues(string $name): array
+    {
+        return $this->headers[strtolower($name)] ?? [];
+    }
+
+    public function getRawHeaders(): string
+    {
+        return $this->rawHeaders;
+    }
+
+    public function getStatusCode(): int
+    {
+        return $this->statusCode;
+    }
+
+    public function isSuccessful(): bool
+    {
+        return $this->statusCode >= 200 && $this->statusCode < 300;
+    }
+
+    public function isRedirect(): bool
+    {
+        return $this->statusCode >= 300 && $this->statusCode < 400;
+    }
+
+    public function isClientError(): bool
+    {
+        return $this->statusCode >= 400 && $this->statusCode < 500;
+    }
+
+    public function isServerError(): bool
+    {
+        return $this->statusCode >= 500 && $this->statusCode < 600;
+    }
+
+    public function getJson(bool $assoc = true)
+    {
+        return $this->body === null ? null : json_decode($this->body, $assoc);
+    }
+
+    public function getInfo(): array
+    {
+        return $this->info;
+    }
+
+    public function __toString(): string
+    {
+        return $this->body ?? '';
+    }
 }

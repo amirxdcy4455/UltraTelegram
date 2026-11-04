@@ -20,22 +20,43 @@ class TelegramApiException extends RuntimeException
         $this->apiErrorCode = $response->getErrorCode() ?? 0;
         $this->parameters = $response->getParameters();
         $this->response = $response;
+
         $message = $response->getDescription() ?? 'Telegram Bot API request failed.';
+
         parent::__construct($message, $this->apiErrorCode);
     }
 
-    public function getMethod(): string { return $this->method; }
-    public function getApiErrorCode(): int { return $this->apiErrorCode; }
-    public function getParameters(): array { return $this->parameters; }
+    public function getMethod(): string
+    {
+        return $this->method;
+    }
+
+    public function getApiErrorCode(): int
+    {
+        return $this->apiErrorCode;
+    }
+
+    public function getParameters(): array
+    {
+        return $this->parameters;
+    }
+
     public function getRetryAfter(): ?int
     {
         $value = $this->parameters['retry_after'] ?? null;
-        return is_numeric($value) ? (int)$value : null;
+
+        return is_numeric($value) ? (int) $value : null;
     }
+
     public function getMigrateToChatId(): int|string|null
     {
         $value = $this->parameters['migrate_to_chat_id'] ?? null;
+
         return is_int($value) || is_string($value) ? $value : null;
     }
-    public function getResponse(): TelegramResponse { return $this->response; }
+
+    public function getResponse(): TelegramResponse
+    {
+        return $this->response;
+    }
 }
