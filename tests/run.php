@@ -670,10 +670,10 @@ $test('Copy local Bot API file paths without HTTP download', static function () 
     @rmdir($destinationDirectory);
 });
 
-$test(
-    'Build direct and nested multipart file fields '
-    . 'without attachment name collisions',
-    static function () use ($assert): void {
+$multipartTestName = 'Build direct and nested multipart file fields '
+    . 'without attachment name collisions';
+
+$test($multipartTestName, static function () use ($assert): void {
     $filePath = tempnam(sys_get_temp_dir(), 'ultra-multipart-');
     file_put_contents($filePath, 'upload-data');
     $file = InputFile::fromPath($filePath, 'sample.txt', 'text/plain');
