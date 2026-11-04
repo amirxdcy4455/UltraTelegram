@@ -30,6 +30,21 @@ class UpdateDispatcher
         return $this;
     }
 
+    public function onChannelPost(callable $handler): self { return $this->on('channel_post', $handler); }
+    public function onEditedChannelPost(callable $handler): self { return $this->on('edited_channel_post', $handler); }
+    public function onBusinessConnection(callable $handler): self { return $this->on('business_connection', $handler); }
+    public function onEditedBusinessMessage(callable $handler): self { return $this->on('edited_business_message', $handler); }
+    public function onDeletedBusinessMessages(callable $handler): self { return $this->on('deleted_business_messages', $handler); }
+    public function onMessageReactionCount(callable $handler): self { return $this->on('message_reaction_count', $handler); }
+    public function onChosenInlineResult(callable $handler): self { return $this->on('chosen_inline_result', $handler); }
+    public function onShippingQuery(callable $handler): self { return $this->on('shipping_query', $handler); }
+    public function onPreCheckoutQuery(callable $handler): self { return $this->on('pre_checkout_query', $handler); }
+    public function onPurchasedPaidMedia(callable $handler): self { return $this->on('purchased_paid_media', $handler); }
+    public function onPoll(callable $handler): self { return $this->on('poll', $handler); }
+    public function onPollAnswer(callable $handler): self { return $this->on('poll_answer', $handler); }
+    public function onChatBoost(callable $handler): self { return $this->on('chat_boost', $handler); }
+    public function onRemovedChatBoost(callable $handler): self { return $this->on('removed_chat_boost', $handler); }
+    public function onManagedBot(callable $handler): self { return $this->on('managed_bot', $handler); }
     public function onMessage(callable $handler): self { return $this->on('message', $handler); }
     public function onEditedMessage(callable $handler): self { return $this->on('edited_message', $handler); }
     public function onCallbackQuery(callable $handler): self { return $this->on('callback_query', $handler); }

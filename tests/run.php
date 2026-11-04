@@ -832,6 +832,43 @@ $test('Recognize current Bot API 10.3 update event fields', static function () u
     }
 });
 
+$test('Register handlers for current Bot API update types', static function () use ($assert): void {
+    $client = new TelegramClient('123456:abcdefghijklmnopqrstuvwxyz123456', transport: new FakeTransport());
+    $dispatcher = new UpdateDispatcher($client);
+    $handlerMethods = [
+        'onChannelPost' => 'channel_post',
+        'onEditedChannelPost' => 'edited_channel_post',
+        'onBusinessConnection' => 'business_connection',
+        'onEditedBusinessMessage' => 'edited_business_message',
+        'onDeletedBusinessMessages' => 'deleted_business_messages',
+        'onMessageReactionCount' => 'message_reaction_count',
+        'onChosenInlineResult' => 'chosen_inline_result',
+        'onShippingQuery' => 'shipping_query',
+        'onPreCheckoutQuery' => 'pre_checkout_query',
+        'onPurchasedPaidMedia' => 'purchased_paid_media',
+        'onPoll' => 'poll',
+        'onPollAnswer' => 'poll_answer',
+        'onChatBoost' => 'chat_boost',
+        'onRemovedChatBoost' => 'removed_chat_boost',
+        'onManagedBot' => 'managed_bot'
+    ];
+
+    foreach ($handlerMethods as $method => $type) {
+        $receivedType = null;
+        $result = $dispatcher->{$method}(static function ($payload, $update) use (&$receivedType): void {
+            $receivedType = $update->getUpdateType();
+        });
+
+        $assert($result === $dispatcher, $method . ' must support fluent chaining.');
+        $dispatcher->dispatch([
+            'update_id' => 1,
+            $type => ['id' => 10]
+        ]);
+        $assert($receivedType === $type, $method . ' did not receive ' . $type . '.');
+        $dispatcher->remove($type);
+    }
+});
+
 $test('Allow dispatcher client override', static function () use ($assert): void {
     $defaultTransport = new FakeTransport();
     $overrideTransport = new FakeTransport();

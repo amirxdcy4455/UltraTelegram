@@ -40,6 +40,27 @@ $poller->onError(static function (Throwable $error): bool {
 
 ## Update dispatcher
 
+The dispatcher provides dedicated fluent handlers for the current Bot API update types, including channel posts, business connection changes, deleted business messages, message reaction counts, payments, polls, purchased paid media, chat boosts and managed bots. The generic `on($updateType, $handler)` method remains available for newly introduced update types.
+
+~~~php
+$dispatcher = $bot->createDispatcher();
+
+$dispatcher
+    ->onMessage(static function ($message, $update, $bot): void {
+        // Handle a new message.
+    })
+    ->onMessageReaction(static function ($reaction, $update, $bot): void {
+        // Handle a message reaction update.
+    })
+    ->onPurchasedPaidMedia(static function ($purchase, $update, $bot): void {
+        // Handle a paid media purchase.
+    })
+    ->onAny(static function ($payload, $update, $bot): void {
+        // Observe every update received by this dispatcher.
+    });
+~~~
+
+
 ~~~php
 $dispatcher = $bot->createDispatcher();
 
