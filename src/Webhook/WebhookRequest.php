@@ -123,7 +123,8 @@ class WebhookRequest
             || !($properties[$eventFields[0]] instanceof \stdClass)
         ) {
             throw new WebhookRequestException(
-                'Telegram webhook payload must contain a non-negative integer update_id and exactly one object update field.',
+                'Telegram webhook payload must contain a non-negative integer update_id '
+                . 'and exactly one object update field.',
                 400
             );
         }

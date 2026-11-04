@@ -20,21 +20,21 @@ class Keyboard
         self::validateRows($rows);
 
         return array_replace($options, [
-            'keyboard' => $rows
+            'keyboard' => $rows,
         ]);
     }
 
     public static function removeReply(array $options = []): array
     {
         return array_replace($options, [
-            'remove_keyboard' => true
+            'remove_keyboard' => true,
         ]);
     }
 
     public static function forceReply(array $options = []): array
     {
         return array_replace($options, [
-            'force_reply' => true
+            'force_reply' => true,
         ]);
     }
 
@@ -56,7 +56,9 @@ class Keyboard
 
             foreach ($row as $button) {
                 if (!is_array($button) || !isset($button['text']) || !is_string($button['text'])) {
-                    throw new InvalidArgumentException('Every keyboard button must be an array containing a text field.');
+                    throw new InvalidArgumentException(
+                        'Every keyboard button must be an array containing a text field.'
+                    );
                 }
             }
         }
